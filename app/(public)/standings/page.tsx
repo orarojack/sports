@@ -12,26 +12,21 @@ export const metadata: Metadata = {
 }
 
 export default async function StandingsPage() {
-  let fkfStandings: StandingWithTeam[] = []
-  let wnslStandings: StandingWithTeam[] = []
   let leagues: League[] = []
+  let standingsMap: Record<string, StandingWithTeam[]> = {}
   let databaseUnavailable = false
 
   try {
-    ;[fkfStandings, wnslStandings, leagues] = await Promise.all([
-      getStandingsWithTeams('fkf-nyanza'),
-      getStandingsWithTeams('wnsl'),
-      getLeagues(),
-    ])
+    leagues = await getLeagues()
+    const standingsEntries = await Promise.all(
+      leagues.map(async (league) => [league.id, await getStandingsWithTeams(league.id)] as const)
+    )
+    standingsMap = Object.fromEntries(standingsEntries)
   } catch (error) {
     console.error('Failed to load standings from database:', error)
     databaseUnavailable = true
   }
-
-  const standingsMap: Record<string, typeof fkfStandings> = {
-    'fkf-nyanza': fkfStandings,
-    'wnsl': wnslStandings,
-  }
+  const firstLeagueId = leagues[0]?.id ?? ''
 
   return (
     <div className="min-h-screen py-8 lg:py-12">
@@ -76,7 +71,7 @@ export default async function StandingsPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="fkf-nyanza" className="w-full">
+        <Tabs defaultValue={firstLeagueId} className="w-full">
           <TabsList className="mb-6">
             {leagues.map((league) => (
               <TabsTrigger key={league.id} value={league.id}>

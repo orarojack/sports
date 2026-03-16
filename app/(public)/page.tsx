@@ -14,22 +14,26 @@ import type { FixtureWithTeams, League, StandingWithTeam } from '@/lib/types'
 
 export default async function HomePage() {
   let allFixtures: FixtureWithTeams[] = []
-  let fkfStandings: StandingWithTeam[] = []
-  let wnslStandings: StandingWithTeam[] = []
   let leagues: League[] = []
+  let standingsByLeague: Record<string, StandingWithTeam[]> = {}
   let databaseUnavailable = false
 
   try {
-    ;[allFixtures, fkfStandings, wnslStandings, leagues] = await Promise.all([
+    ;[allFixtures, leagues] = await Promise.all([
       getFixturesWithTeams(),
-      getStandingsWithTeams('fkf-nyanza'),
-      getStandingsWithTeams('wnsl'),
       getLeagues(),
     ])
+
+    const standingsEntries = await Promise.all(
+      leagues.map(async (league) => [league.id, await getStandingsWithTeams(league.id)] as const)
+    )
+    standingsByLeague = Object.fromEntries(standingsEntries)
   } catch (error) {
     console.error('Failed to load homepage data from database:', error)
     databaseUnavailable = true
   }
+
+  const firstLeagueId = leagues[0]?.id ?? ''
 
   // Get upcoming fixtures (next 6)
   const today = new Date().toISOString().split('T')[0]
@@ -141,7 +145,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <Tabs defaultValue="fkf-nyanza" className="w-full">
+          <Tabs defaultValue={firstLeagueId} className="w-full">
             <TabsList className="mb-6 w-full justify-start">
               {leagues.map((league) => (
                 <TabsTrigger key={league.id} value={league.id} className="flex-1 sm:flex-none">
@@ -149,22 +153,16 @@ export default async function HomePage() {
                 </TabsTrigger>
               ))}
             </TabsList>
-            
-            <TabsContent value="fkf-nyanza">
-              <Card>
-                <CardContent className="p-0">
-                  <StandingsTable standings={fkfStandings.slice(0, 5)} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="wnsl">
-              <Card>
-                <CardContent className="p-0">
-                  <StandingsTable standings={wnslStandings.slice(0, 5)} />
-                </CardContent>
-              </Card>
-            </TabsContent>
+
+            {leagues.map((league) => (
+              <TabsContent key={league.id} value={league.id}>
+                <Card>
+                  <CardContent className="p-0">
+                    <StandingsTable standings={(standingsByLeague[league.id] || []).slice(0, 5)} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            ))}
           </Tabs>
         </div>
       </section>

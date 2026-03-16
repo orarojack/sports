@@ -181,6 +181,15 @@ async function insertMany(table: string, payloads: Record<string, unknown>[]): P
   if (result.error) throw result.error
 }
 
+function isMissingScorersColumnError(error: unknown): boolean {
+  const message =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: unknown }).message)
+      : String(error ?? '')
+
+  return message.includes("Could not find the 'scorers' column")
+}
+
 async function upsertMany(table: string, payloads: Record<string, unknown>[]): Promise<void> {
   const client = getSupabaseServerClient()
   const snakePayloads = payloads.map(toSnakeCasePayload)
@@ -281,16 +290,37 @@ export async function getRecentResults(limit?: number): Promise<Fixture[]> {
 }
 
 export async function createFixture(fixture: Fixture): Promise<Fixture> {
-  const row = await insertOne('fixtures', fixture as unknown as Record<string, unknown>)
-  return mapFixture(row)
+  try {
+    const row = await insertOne('fixtures', fixture as unknown as Record<string, unknown>)
+    return mapFixture(row)
+  } catch (error) {
+    if (!isMissingScorersColumnError(error)) throw error
+
+    const { scorers, ...fallbackFixture } = fixture
+    const row = await insertOne('fixtures', fallbackFixture as unknown as Record<string, unknown>)
+    return {
+      ...mapFixture(row),
+      scorers: [],
+    }
+  }
 }
 
 export async function updateFixture(id: string, updates: Partial<Fixture>): Promise<Fixture | undefined> {
-  const row = await updateOne('fixtures', id, {
+  const payload = {
     ...updates,
     updatedAt: new Date().toISOString(),
-  } as unknown as Record<string, unknown>)
-  return row ? mapFixture(row) : undefined
+  } as unknown as Record<string, unknown>
+
+  try {
+    const row = await updateOne('fixtures', id, payload)
+    return row ? mapFixture(row) : undefined
+  } catch (error) {
+    if (!isMissingScorersColumnError(error)) throw error
+
+    const { scorers, ...fallbackPayload } = payload
+    const row = await updateOne('fixtures', id, fallbackPayload)
+    return row ? { ...mapFixture(row), scorers: [] } : undefined
+  }
 }
 
 export async function deleteFixture(id: string): Promise<boolean> {
@@ -298,10 +328,20 @@ export async function deleteFixture(id: string): Promise<boolean> {
 }
 
 export async function batchCreateFixtures(fixtures: Fixture[]): Promise<{ success: number; failed: number }> {
-  await insertMany(
-    'fixtures',
-    fixtures as unknown as Record<string, unknown>[]
-  )
+  try {
+    await insertMany(
+      'fixtures',
+      fixtures as unknown as Record<string, unknown>[]
+    )
+  } catch (error) {
+    if (!isMissingScorersColumnError(error)) throw error
+
+    const fallbackFixtures = fixtures.map(({ scorers, ...rest }) => rest)
+    await insertMany(
+      'fixtures',
+      fallbackFixtures as unknown as Record<string, unknown>[]
+    )
+  }
   return { success: fixtures.length, failed: 0 }
 }
 

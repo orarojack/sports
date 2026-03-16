@@ -36,6 +36,7 @@ export default async function TeamsPage() {
           return { ...team, standing }
         })
       )
+  const firstLeagueId = leagues[0]?.id ?? ''
 
   return (
     <div className="min-h-screen py-8 lg:py-12">
@@ -56,7 +57,7 @@ export default async function TeamsPage() {
           </Card>
         )}
 
-        <Tabs defaultValue="fkf-nyanza" className="w-full">
+        <Tabs defaultValue={firstLeagueId} className="w-full">
           <TabsList className="mb-6">
             {leagues.map((league) => (
               <TabsTrigger key={league.id} value={league.id}>
