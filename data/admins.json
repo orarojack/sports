@@ -1,0 +1,21 @@
+{
+  "admins": [
+    {
+      "id": "admin-001",
+      "email": "admin@fkf.co.ke",
+      "passwordHash": "$2b$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/OP.PLACEHOLDER",
+      "role": "super_admin",
+      "name": "Super Admin",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "admin-002",
+      "email": "editor@fkf.co.ke",
+      "passwordHash": "$2b$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/OP.PLACEHOLDER",
+      "role": "editor",
+      "name": "Content Editor",
+      "createdAt": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "activityLogs": []
+}

@@ -1,0 +1,244 @@
+{
+  "teams": [
+    {
+      "id": "daraja-mbili-galaxy",
+      "name": "Daraja Mbili Galaxy",
+      "shortName": "DMG",
+      "logo": "/logos/teams/daraja-mbili.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Hatuna St Gabriel Seminary",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "ciala-fc",
+      "name": "Ciala FC",
+      "shortName": "CFC",
+      "logo": "/logos/teams/ciala-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Ciala Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "ragumo-fc",
+      "name": "Ragumo FC",
+      "shortName": "RFC",
+      "logo": "/logos/teams/ragumo-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Ragumo Primary Sch",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "nyamlori-fc",
+      "name": "Nyamlori FC",
+      "shortName": "NFC",
+      "logo": "/logos/teams/nyamlori-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Nyamlori Ground",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "orongo-fc",
+      "name": "Orongo FC",
+      "shortName": "OFC",
+      "logo": "/logos/teams/orongo-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Orongo Secondary Sch",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "kabete-fc",
+      "name": "Kabete FC",
+      "shortName": "KFC",
+      "logo": "/logos/teams/kabete-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Kabete Ground",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "vsa-levo",
+      "name": "VSA Levo",
+      "shortName": "VSA",
+      "logo": "/logos/teams/vsa-levo.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Onding Primary Sch",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "plateau-kings-fc",
+      "name": "Plateau Kings FC",
+      "shortName": "PKF",
+      "logo": "/logos/teams/plateau-kings.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Plateau Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "ugenya-hot-stars",
+      "name": "Ugenya Hot Stars",
+      "shortName": "UHS",
+      "logo": "/logos/teams/ugenya-hot-stars.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Nyambiro Primary Sch",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "ayucha-fc",
+      "name": "Ayucha FC",
+      "shortName": "AFC",
+      "logo": "/logos/teams/ayucha-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Ayucha Ground",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "kawino-fc",
+      "name": "Kawino FC",
+      "shortName": "KWF",
+      "logo": "/logos/teams/kawino-fc.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Kawino Ground",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "ahero-rangers",
+      "name": "Ahero Rangers",
+      "shortName": "AR",
+      "logo": "/logos/teams/ahero-rangers.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Ahero Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "karapul-villa-fc",
+      "name": "Karapul Villa FC",
+      "shortName": "KVF",
+      "logo": "/logos/teams/karapul-villa.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Karapul Primary Sch",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "bondo-kachola",
+      "name": "Bondo Kachola",
+      "shortName": "BK",
+      "logo": "/logos/teams/bondo-kachola.png",
+      "league": "fkf-nyanza",
+      "zone": "A",
+      "homeVenue": "Bondo Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "gor-mahia-queens",
+      "name": "Gor Mahia Queens",
+      "shortName": "GMQ",
+      "logo": "/logos/teams/gor-mahia-queens.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "MYSA Komarock Grounds",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "mtg-united",
+      "name": "MTG United",
+      "shortName": "MTG",
+      "logo": "/logos/teams/mtg-united.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "MTG Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "bandari-queens",
+      "name": "Bandari Queens",
+      "shortName": "BQ",
+      "logo": "/logos/teams/bandari-queens.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Serani Grounds",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "sunderland-samba",
+      "name": "Sunderland Samba",
+      "shortName": "SS",
+      "logo": "/logos/teams/sunderland-samba.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Sunderland Ground",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "bunyore-starlets",
+      "name": "Bunyore Starlets",
+      "shortName": "BS",
+      "logo": "/logos/teams/bunyore-starlets.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Mumboha Grounds",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "fc-105",
+      "name": "FC 105",
+      "shortName": "105",
+      "logo": "/logos/teams/fc-105.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Luanda Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "mathare-united-women",
+      "name": "Mathare United Women",
+      "shortName": "MUW",
+      "logo": "/logos/teams/mathare-united-women.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Dandora Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "afc-leopardess",
+      "name": "AFC Leopardess",
+      "shortName": "AFCL",
+      "logo": "/logos/teams/afc-leopardess.png",
+      "league": "wnsl",
+      "zone": "A",
+      "homeVenue": "Leopardess Arena",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "gene-queens",
+      "name": "Gene Queens",
+      "shortName": "GQ",
+      "logo": "/logos/teams/gene-queens.png",
+      "league": "wnsl",
+      "zone": "B",
+      "homeVenue": "Uasin Gishu Pry",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": "solasa-stima",
+      "name": "Solasa Stima",
+      "shortName": "SoS",
+      "logo": "/logos/teams/solasa-stima.png",
+      "league": "wnsl",
+      "zone": "B",
+      "homeVenue": "Solasa Stadium",
+      "createdAt": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

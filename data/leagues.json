@@ -1,0 +1,20 @@
+{
+  "leagues": [
+    {
+      "id": "fkf-nyanza",
+      "name": "FKF Nyanza Regional League",
+      "shortName": "FKF Nyanza",
+      "season": "2025/2026",
+      "logo": "/logos/fkf-logo.png",
+      "zones": ["A", "B"]
+    },
+    {
+      "id": "wnsl",
+      "name": "Women National Super League",
+      "shortName": "WNSL",
+      "season": "2025/2026",
+      "logo": "/logos/wnsl-logo.png",
+      "zones": ["A", "B"]
+    }
+  ]
+}
