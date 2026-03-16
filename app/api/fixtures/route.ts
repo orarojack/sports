@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       status: body.status || 'scheduled',
       homeScore: null,
       awayScore: null,
+      scorers: [],
       broadcastTime: body.broadcastTime || body.time,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

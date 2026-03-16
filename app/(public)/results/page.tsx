@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FixtureCard } from '@/components/fixtures/fixture-card'
 import { MatchdayHeader } from '@/components/fixtures/matchday-header'
 import { getFixturesWithTeams, getLeagues } from '@/lib/data'
+import type { FixtureWithTeams, League } from '@/lib/types'
 import { groupFixturesByDate } from '@/lib/utils/date'
 import { Trophy } from 'lucide-react'
 
@@ -13,15 +14,53 @@ export const metadata: Metadata = {
 }
 
 export default async function ResultsPage() {
-  const [allFixtures, leagues] = await Promise.all([
-    getFixturesWithTeams(),
-    getLeagues(),
-  ])
+  let allFixtures: FixtureWithTeams[] = []
+  let leagues: League[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[allFixtures, leagues] = await Promise.all([
+      getFixturesWithTeams(),
+      getLeagues(),
+    ])
+  } catch (error) {
+    console.error('Failed to load results from database:', error)
+    databaseUnavailable = true
+  }
 
   // Filter to completed fixtures
   const completedFixtures = allFixtures
     .filter(f => f.status === 'completed')
     .sort((a, b) => b.date.localeCompare(a.date))
+
+  const topScorers = Array.from(
+    completedFixtures.reduce((acc, fixture) => {
+      fixture.scorers.forEach((scorer) => {
+        const key = `${scorer.teamId}::${scorer.playerName.toLowerCase()}`
+        const existing = acc.get(key)
+        const teamName =
+          scorer.teamId === fixture.homeTeam.id
+            ? fixture.homeTeam.name
+            : scorer.teamId === fixture.awayTeam.id
+              ? fixture.awayTeam.name
+              : 'Unknown Team'
+
+        if (existing) {
+          existing.goals += 1
+        } else {
+          acc.set(key, {
+            playerName: scorer.playerName,
+            teamName,
+            goals: 1,
+          })
+        }
+      })
+      return acc
+    }, new Map<string, { playerName: string; teamName: string; goals: number }>())
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => b.goals - a.goals || a.playerName.localeCompare(b.playerName))
+    .slice(0, 10)
 
   return (
     <div className="min-h-screen py-8 lg:py-12">
@@ -33,6 +72,38 @@ export default async function ResultsPage() {
             Completed match results - Season 2025/2026
           </p>
         </div>
+
+        {databaseUnavailable && (
+          <Card className="mb-6 border-destructive/30">
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              Unable to reach the database right now. Results will appear once the database connection is restored.
+            </CardContent>
+          </Card>
+        )}
+
+        {topScorers.length > 0 && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <h2 className="mb-3 text-lg font-semibold">Top Scorers</h2>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {topScorers.map((scorer, index) => (
+                  <div
+                    key={`${scorer.teamName}-${scorer.playerName}`}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">
+                        {index + 1}. {scorer.playerName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{scorer.teamName}</p>
+                    </div>
+                    <span className="text-sm font-bold">{scorer.goals}G</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-6">

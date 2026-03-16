@@ -25,13 +25,16 @@ import { useFixtures } from '@/hooks/use-fixtures'
 import { useLeagues } from '@/hooks/use-leagues'
 import { formatMatchDate, formatMatchTime } from '@/lib/utils/date'
 import { TeamLogo } from '@/components/teams/team-logo'
-import type { FixtureWithTeams } from '@/lib/types'
+import { Textarea } from '@/components/ui/textarea'
+import type { FixtureWithTeams, GoalScorer } from '@/lib/types'
 
 export default function AdminResultsPage() {
   const [leagueFilter, setLeagueFilter] = useState<string>('all')
   const [selectedFixture, setSelectedFixture] = useState<FixtureWithTeams | null>(null)
   const [homeScore, setHomeScore] = useState('')
   const [awayScore, setAwayScore] = useState('')
+  const [homeScorersInput, setHomeScorersInput] = useState('')
+  const [awayScorersInput, setAwayScorersInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { data: fixturesData, mutate } = useFixtures()
@@ -50,6 +53,35 @@ export default function AdminResultsPage() {
     setSelectedFixture(fixture)
     setHomeScore('')
     setAwayScore('')
+    setHomeScorersInput('')
+    setAwayScorersInput('')
+  }
+
+  const parseScorers = (input: string, teamId: string): GoalScorer[] => {
+    if (!input.trim()) return []
+
+    return input
+      .split(',')
+      .map(token => token.trim())
+      .filter(Boolean)
+      .map(token => {
+        const minuteMatch = token.match(/^(.*)\s+(\d+)(?:\+(\d+))?'?$/)
+        if (minuteMatch) {
+          const playerName = minuteMatch[1].trim()
+          const baseMinute = parseInt(minuteMatch[2], 10)
+          const extraMinute = minuteMatch[3] ? parseInt(minuteMatch[3], 10) : 0
+          return {
+            teamId,
+            playerName,
+            minute: baseMinute + extraMinute,
+          }
+        }
+        return {
+          teamId,
+          playerName: token,
+          minute: null,
+        }
+      })
   }
 
   const handleSubmitResult = async () => {
@@ -65,12 +97,18 @@ export default function AdminResultsPage() {
     setIsSubmitting(true)
 
     try {
+      const scorers = [
+        ...parseScorers(homeScorersInput, selectedFixture.homeTeam.id),
+        ...parseScorers(awayScorersInput, selectedFixture.awayTeam.id),
+      ]
+
       const res = await fetch(`/api/fixtures/${selectedFixture.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           homeScore: home,
           awayScore: away,
+          scorers,
           status: 'completed',
         }),
       })
@@ -200,7 +238,7 @@ export default function AdminResultsPage() {
 
           {selectedFixture && (
             <div className="py-6">
-              <div className="flex items-center justify-center gap-4">
+              <div className="mb-6 flex items-center justify-center gap-4">
                 <div className="flex flex-col items-center gap-2 text-center">
                   <TeamLogo name={selectedFixture.homeTeam.name} logo={selectedFixture.homeTeam.logo} size="lg" />
                   <span className="font-medium">{selectedFixture.homeTeam.name}</span>
@@ -229,6 +267,34 @@ export default function AdminResultsPage() {
                   />
                 </div>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {selectedFixture.homeTeam.shortName} scorers
+                  </label>
+                  <Textarea
+                    value={homeScorersInput}
+                    onChange={(e) => setHomeScorersInput(e.target.value)}
+                    placeholder="e.g. Ochieng 12, Omondi 77"
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    {selectedFixture.awayTeam.shortName} scorers
+                  </label>
+                  <Textarea
+                    value={awayScorersInput}
+                    onChange={(e) => setAwayScorersInput(e.target.value)}
+                    placeholder="e.g. Anyango 44, Akinyi 90+2"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Enter comma-separated players, optionally with minute (example: "Akinyi 90+2").
+              </p>
             </div>
           )}
 

@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FixtureCard } from '@/components/fixtures/fixture-card'
 import { MatchdayHeader } from '@/components/fixtures/matchday-header'
 import { getFixturesWithTeams, getLeagues } from '@/lib/data'
+import type { FixtureWithTeams, League } from '@/lib/types'
 import { groupFixturesByDate } from '@/lib/utils/date'
 import { Calendar } from 'lucide-react'
 
@@ -13,10 +14,19 @@ export const metadata: Metadata = {
 }
 
 export default async function FixturesPage() {
-  const [allFixtures, leagues] = await Promise.all([
-    getFixturesWithTeams(),
-    getLeagues(),
-  ])
+  let allFixtures: FixtureWithTeams[] = []
+  let leagues: League[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[allFixtures, leagues] = await Promise.all([
+      getFixturesWithTeams(),
+      getLeagues(),
+    ])
+  } catch (error) {
+    console.error('Failed to load fixtures from database:', error)
+    databaseUnavailable = true
+  }
 
   // Filter to upcoming/scheduled fixtures
   const today = new Date().toISOString().split('T')[0]
@@ -40,6 +50,14 @@ export default async function FixturesPage() {
             Upcoming matches across all leagues - Season 2025/2026
           </p>
         </div>
+
+        {databaseUnavailable && (
+          <Card className="mb-6 border-destructive/30">
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              Unable to reach the database right now. Displayed fixtures will appear once the database connection is restored.
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-6">

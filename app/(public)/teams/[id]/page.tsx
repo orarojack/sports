@@ -13,6 +13,7 @@ import {
   getFixturesWithTeams,
   getLeagueById 
 } from '@/lib/data'
+import type { FixtureWithTeams, Standing, Team } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 interface TeamPageProps {
@@ -21,7 +22,12 @@ interface TeamPageProps {
 
 export async function generateMetadata({ params }: TeamPageProps): Promise<Metadata> {
   const { id } = await params
-  const team = await getTeamById(id)
+  let team
+  try {
+    team = await getTeamById(id)
+  } catch {
+    return { title: 'Team' }
+  }
   
   if (!team) {
     return { title: 'Team Not Found' }
@@ -35,11 +41,41 @@ export async function generateMetadata({ params }: TeamPageProps): Promise<Metad
 
 export default async function TeamPage({ params }: TeamPageProps) {
   const { id } = await params
-  const [team, standing, allFixtures] = await Promise.all([
-    getTeamById(id),
-    getStandingByTeam(id),
-    getFixturesWithTeams(),
-  ])
+  let team: Team | undefined
+  let standing: Standing | undefined
+  let allFixtures: FixtureWithTeams[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[team, standing, allFixtures] = await Promise.all([
+      getTeamById(id),
+      getStandingByTeam(id),
+      getFixturesWithTeams(),
+    ])
+  } catch (error) {
+    console.error('Failed to load team page from database:', error)
+    databaseUnavailable = true
+  }
+
+  if (databaseUnavailable) {
+    return (
+      <div className="min-h-screen py-8 lg:py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Link href="/teams">
+            <Button variant="ghost" size="sm" className="mb-6 gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              All Teams
+            </Button>
+          </Link>
+          <Card className="border-destructive/30">
+            <CardContent className="py-10 text-center text-muted-foreground">
+              Unable to reach the database right now. Team details will appear once the connection is restored.
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (!team) {
     notFound()

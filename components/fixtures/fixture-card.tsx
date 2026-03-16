@@ -89,6 +89,28 @@ export function FixtureCard({ fixture, showDate }: FixtureCardProps) {
             </div>
           )}
         </div>
+
+        {isCompleted && fixture.scorers.length > 0 && (
+          <div className="mt-3 border-t border-border pt-3 text-xs">
+            <p className="mb-1 font-medium text-muted-foreground">Goal scorers</p>
+            <div className="space-y-1">
+              <p className="text-foreground/90">
+                <span className="font-medium">{fixture.homeTeam.shortName}:</span>{' '}
+                {fixture.scorers
+                  .filter(s => s.teamId === fixture.homeTeam.id)
+                  .map(s => `${s.playerName}${s.minute ? ` (${s.minute}')` : ''}`)
+                  .join(', ') || 'None'}
+              </p>
+              <p className="text-foreground/90">
+                <span className="font-medium">{fixture.awayTeam.shortName}:</span>{' '}
+                {fixture.scorers
+                  .filter(s => s.teamId === fixture.awayTeam.id)
+                  .map(s => `${s.playerName}${s.minute ? ` (${s.minute}')` : ''}`)
+                  .join(', ') || 'None'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   )

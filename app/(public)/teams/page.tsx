@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { TeamLogo } from '@/components/teams/team-logo'
 import { getTeams, getLeagues, getStandingByTeam } from '@/lib/data'
+import type { League, Team, Standing } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Teams',
@@ -12,18 +13,29 @@ export const metadata: Metadata = {
 }
 
 export default async function TeamsPage() {
-  const [teams, leagues] = await Promise.all([
-    getTeams(),
-    getLeagues(),
-  ])
+  let teams: Team[] = []
+  let leagues: League[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[teams, leagues] = await Promise.all([
+      getTeams(),
+      getLeagues(),
+    ])
+  } catch (error) {
+    console.error('Failed to load teams from database:', error)
+    databaseUnavailable = true
+  }
 
   // Get standings for each team
-  const teamsWithStandings = await Promise.all(
-    teams.map(async (team) => {
-      const standing = await getStandingByTeam(team.id)
-      return { ...team, standing }
-    })
-  )
+  const teamsWithStandings: (Team & { standing?: Standing })[] = databaseUnavailable
+    ? []
+    : await Promise.all(
+        teams.map(async (team) => {
+          const standing = await getStandingByTeam(team.id)
+          return { ...team, standing }
+        })
+      )
 
   return (
     <div className="min-h-screen py-8 lg:py-12">
@@ -35,6 +47,14 @@ export default async function TeamsPage() {
             All teams competing in Season 2025/2026
           </p>
         </div>
+
+        {databaseUnavailable && (
+          <Card className="mb-6 border-destructive/30">
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              Unable to reach the database right now. Team data will appear once the database connection is restored.
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="fkf-nyanza" className="w-full">
           <TabsList className="mb-6">

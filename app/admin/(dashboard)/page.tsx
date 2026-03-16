@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Trophy, Users, Table2, TrendingUp, Clock } from 'lucide-react'
+import { Calendar, Trophy, Users, Table2, TrendingUp, Clock, Flag } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +39,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -147,6 +147,18 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="font-medium">Standings</p>
                 <p className="text-sm text-muted-foreground">View table</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/leagues">
+          <Card className="cursor-pointer transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center gap-4 p-4">
+              <Flag className="h-8 w-8 text-chart-2" />
+              <div>
+                <p className="font-medium">Leagues</p>
+                <p className="text-sm text-muted-foreground">Add new league</p>
               </div>
             </CardContent>
           </Card>

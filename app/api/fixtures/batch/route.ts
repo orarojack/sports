@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
         status: item.status || 'scheduled',
         homeScore: item.homeScore ?? null,
         awayScore: item.awayScore ?? null,
+        scorers: Array.isArray(item.scorers) ? item.scorers : [],
         broadcastTime: item.broadcastTime || item.time,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

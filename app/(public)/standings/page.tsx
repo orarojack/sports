@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { StandingsTable } from '@/components/standings/standings-table'
 import { getStandingsWithTeams, getLeagues } from '@/lib/data'
+import type { League, StandingWithTeam } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 
 export const metadata: Metadata = {
@@ -11,11 +12,21 @@ export const metadata: Metadata = {
 }
 
 export default async function StandingsPage() {
-  const [fkfStandings, wnslStandings, leagues] = await Promise.all([
-    getStandingsWithTeams('fkf-nyanza'),
-    getStandingsWithTeams('wnsl'),
-    getLeagues(),
-  ])
+  let fkfStandings: StandingWithTeam[] = []
+  let wnslStandings: StandingWithTeam[] = []
+  let leagues: League[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[fkfStandings, wnslStandings, leagues] = await Promise.all([
+      getStandingsWithTeams('fkf-nyanza'),
+      getStandingsWithTeams('wnsl'),
+      getLeagues(),
+    ])
+  } catch (error) {
+    console.error('Failed to load standings from database:', error)
+    databaseUnavailable = true
+  }
 
   const standingsMap: Record<string, typeof fkfStandings> = {
     'fkf-nyanza': fkfStandings,
@@ -32,6 +43,14 @@ export default async function StandingsPage() {
             Current table positions for Season 2025/2026
           </p>
         </div>
+
+        {databaseUnavailable && (
+          <Card className="mb-6 border-destructive/30">
+            <CardContent className="py-4 text-sm text-muted-foreground">
+              Unable to reach the database right now. Standings will appear once the database connection is restored.
+            </CardContent>
+          </Card>
+        )}
 
         {/* Legend */}
         <div className="mb-6 flex flex-wrap items-center gap-4 text-sm">

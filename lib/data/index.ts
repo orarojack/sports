@@ -1,8 +1,10 @@
 import { promises as fs } from 'fs'
 import path from 'path'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 import type { 
   Team, 
   Fixture, 
+  GoalScorer,
   FixtureWithTeams,
   Standing, 
   StandingWithTeam,
@@ -12,6 +14,7 @@ import type {
 } from '@/lib/types'
 
 const dataDir = path.join(process.cwd(), 'data')
+type DbRow = Record<string, unknown>
 
 // Generic read/write helpers
 async function readJsonFile<T>(filename: string): Promise<T> {
@@ -25,10 +28,173 @@ async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2))
 }
 
+function valueFromRow<T>(row: DbRow, camelKey: string, snakeKey?: string): T {
+  const snake = snakeKey ?? camelKey.replace(/[A-Z]/g, m => `_${m.toLowerCase()}`)
+  return (row[camelKey] ?? row[snake]) as T
+}
+
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String)
+  return []
+}
+
+function mapLeague(row: DbRow): League {
+  return {
+    id: String(valueFromRow(row, 'id')),
+    name: String(valueFromRow(row, 'name')),
+    shortName: String(valueFromRow(row, 'shortName')),
+    season: String(valueFromRow(row, 'season')),
+    logo: String(valueFromRow(row, 'logo')),
+    zones: asStringArray(valueFromRow(row, 'zones')),
+  }
+}
+
+function mapTeam(row: DbRow): Team {
+  return {
+    id: String(valueFromRow(row, 'id')),
+    name: String(valueFromRow(row, 'name')),
+    shortName: String(valueFromRow(row, 'shortName')),
+    logo: String(valueFromRow(row, 'logo')),
+    league: String(valueFromRow(row, 'league')),
+    zone: String(valueFromRow(row, 'zone')),
+    homeVenue: String(valueFromRow(row, 'homeVenue')),
+    founded: valueFromRow<number | undefined>(row, 'founded'),
+    createdAt: String(valueFromRow(row, 'createdAt')),
+  }
+}
+
+function mapFixture(row: DbRow): Fixture {
+  const scorers = valueFromRow<unknown>(row, 'scorers')
+  const parsedScorers = Array.isArray(scorers)
+    ? (scorers as GoalScorer[])
+    : []
+
+  return {
+    id: String(valueFromRow(row, 'id')),
+    matchday: Number(valueFromRow(row, 'matchday')),
+    season: String(valueFromRow(row, 'season')),
+    league: String(valueFromRow(row, 'league')),
+    homeTeamId: String(valueFromRow(row, 'homeTeamId')),
+    awayTeamId: String(valueFromRow(row, 'awayTeamId')),
+    venue: String(valueFromRow(row, 'venue')),
+    date: String(valueFromRow(row, 'date')),
+    time: String(valueFromRow(row, 'time')),
+    status: valueFromRow<Fixture['status']>(row, 'status'),
+    homeScore: valueFromRow<number | null>(row, 'homeScore'),
+    awayScore: valueFromRow<number | null>(row, 'awayScore'),
+    scorers: parsedScorers,
+    broadcastTime: valueFromRow<string | undefined>(row, 'broadcastTime'),
+    createdAt: String(valueFromRow(row, 'createdAt')),
+    updatedAt: String(valueFromRow(row, 'updatedAt')),
+  }
+}
+
+function mapStanding(row: DbRow): Standing {
+  const form = valueFromRow<unknown>(row, 'form')
+  const parsedForm = Array.isArray(form) ? form : []
+  return {
+    id: String(valueFromRow(row, 'id')),
+    teamId: String(valueFromRow(row, 'teamId')),
+    league: String(valueFromRow(row, 'league')),
+    season: String(valueFromRow(row, 'season')),
+    played: Number(valueFromRow(row, 'played')),
+    won: Number(valueFromRow(row, 'won')),
+    drawn: Number(valueFromRow(row, 'drawn')),
+    lost: Number(valueFromRow(row, 'lost')),
+    goalsFor: Number(valueFromRow(row, 'goalsFor')),
+    goalsAgainst: Number(valueFromRow(row, 'goalsAgainst')),
+    goalDifference: Number(valueFromRow(row, 'goalDifference')),
+    points: Number(valueFromRow(row, 'points')),
+    form: parsedForm as ('W' | 'D' | 'L')[],
+    position: Number(valueFromRow(row, 'position')),
+  }
+}
+
+function toSnakeCasePayload(data: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => [
+      key.replace(/[A-Z]/g, m => `_${m.toLowerCase()}`),
+      value,
+    ])
+  )
+}
+
+async function selectAll(table: string): Promise<DbRow[]> {
+  const client = getSupabaseServerClient()
+  const { data, error } = await client.from(table).select('*')
+  if (error) throw error
+  return (data ?? []) as DbRow[]
+}
+
+async function insertOne(
+  table: string,
+  payload: Record<string, unknown>
+): Promise<DbRow> {
+  const client = getSupabaseServerClient()
+  const snakePayload = toSnakeCasePayload(payload)
+
+  let result = await client.from(table).insert(snakePayload).select('*').single()
+  if (result.error) {
+    result = await client.from(table).insert(payload).select('*').single()
+  }
+  if (result.error) throw result.error
+  return result.data as DbRow
+}
+
+async function updateOne(
+  table: string,
+  id: string,
+  updates: Record<string, unknown>
+): Promise<DbRow | undefined> {
+  const client = getSupabaseServerClient()
+  const snakePayload = toSnakeCasePayload(updates)
+
+  let result = await client.from(table).update(snakePayload).eq('id', id).select('*').single()
+  if (result.error) {
+    result = await client.from(table).update(updates).eq('id', id).select('*').single()
+  }
+  if (result.error) {
+    if (result.error.code === 'PGRST116') return undefined
+    throw result.error
+  }
+  return result.data as DbRow
+}
+
+async function deleteById(table: string, id: string): Promise<boolean> {
+  const client = getSupabaseServerClient()
+  const { error, count } = await client
+    .from(table)
+    .delete({ count: 'exact' })
+    .eq('id', id)
+
+  if (error) throw error
+  return Boolean((count ?? 0) > 0)
+}
+
+async function insertMany(table: string, payloads: Record<string, unknown>[]): Promise<void> {
+  const client = getSupabaseServerClient()
+  const snakePayloads = payloads.map(toSnakeCasePayload)
+  let result = await client.from(table).insert(snakePayloads)
+  if (result.error) {
+    result = await client.from(table).insert(payloads)
+  }
+  if (result.error) throw result.error
+}
+
+async function upsertMany(table: string, payloads: Record<string, unknown>[]): Promise<void> {
+  const client = getSupabaseServerClient()
+  const snakePayloads = payloads.map(toSnakeCasePayload)
+  let result = await client.from(table).upsert(snakePayloads, { onConflict: 'id' })
+  if (result.error) {
+    result = await client.from(table).upsert(payloads, { onConflict: 'id' })
+  }
+  if (result.error) throw result.error
+}
+
 // Teams
 export async function getTeams(): Promise<Team[]> {
-  const data = await readJsonFile<{ teams: Team[] }>('teams.json')
-  return data.teams
+  const rows = await selectAll('teams')
+  return rows.map(mapTeam)
 }
 
 export async function getTeamById(id: string): Promise<Team | undefined> {
@@ -42,34 +208,23 @@ export async function getTeamsByLeague(league: string): Promise<Team[]> {
 }
 
 export async function createTeam(team: Team): Promise<Team> {
-  const data = await readJsonFile<{ teams: Team[] }>('teams.json')
-  data.teams.push(team)
-  await writeJsonFile('teams.json', data)
-  return team
+  const row = await insertOne('teams', team as unknown as Record<string, unknown>)
+  return mapTeam(row)
 }
 
 export async function updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-  const data = await readJsonFile<{ teams: Team[] }>('teams.json')
-  const index = data.teams.findIndex(t => t.id === id)
-  if (index === -1) return undefined
-  data.teams[index] = { ...data.teams[index], ...updates }
-  await writeJsonFile('teams.json', data)
-  return data.teams[index]
+  const row = await updateOne('teams', id, updates as unknown as Record<string, unknown>)
+  return row ? mapTeam(row) : undefined
 }
 
 export async function deleteTeam(id: string): Promise<boolean> {
-  const data = await readJsonFile<{ teams: Team[] }>('teams.json')
-  const index = data.teams.findIndex(t => t.id === id)
-  if (index === -1) return false
-  data.teams.splice(index, 1)
-  await writeJsonFile('teams.json', data)
-  return true
+  return deleteById('teams', id)
 }
 
 // Leagues
 export async function getLeagues(): Promise<League[]> {
-  const data = await readJsonFile<{ leagues: League[] }>('leagues.json')
-  return data.leagues
+  const rows = await selectAll('leagues')
+  return rows.map(mapLeague)
 }
 
 export async function getLeagueById(id: string): Promise<League | undefined> {
@@ -77,10 +232,15 @@ export async function getLeagueById(id: string): Promise<League | undefined> {
   return leagues.find(l => l.id === id)
 }
 
+export async function createLeague(league: League): Promise<League> {
+  const row = await insertOne('leagues', league as unknown as Record<string, unknown>)
+  return mapLeague(row)
+}
+
 // Fixtures
 export async function getFixtures(): Promise<Fixture[]> {
-  const data = await readJsonFile<{ fixtures: Fixture[] }>('fixtures.json')
-  return data.fixtures
+  const rows = await selectAll('fixtures')
+  return rows.map(mapFixture)
 }
 
 export async function getFixtureById(id: string): Promise<Fixture | undefined> {
@@ -121,50 +281,28 @@ export async function getRecentResults(limit?: number): Promise<Fixture[]> {
 }
 
 export async function createFixture(fixture: Fixture): Promise<Fixture> {
-  const data = await readJsonFile<{ fixtures: Fixture[] }>('fixtures.json')
-  data.fixtures.push(fixture)
-  await writeJsonFile('fixtures.json', data)
-  return fixture
+  const row = await insertOne('fixtures', fixture as unknown as Record<string, unknown>)
+  return mapFixture(row)
 }
 
 export async function updateFixture(id: string, updates: Partial<Fixture>): Promise<Fixture | undefined> {
-  const data = await readJsonFile<{ fixtures: Fixture[] }>('fixtures.json')
-  const index = data.fixtures.findIndex(f => f.id === id)
-  if (index === -1) return undefined
-  data.fixtures[index] = { 
-    ...data.fixtures[index], 
+  const row = await updateOne('fixtures', id, {
     ...updates,
-    updatedAt: new Date().toISOString()
-  }
-  await writeJsonFile('fixtures.json', data)
-  return data.fixtures[index]
+    updatedAt: new Date().toISOString(),
+  } as unknown as Record<string, unknown>)
+  return row ? mapFixture(row) : undefined
 }
 
 export async function deleteFixture(id: string): Promise<boolean> {
-  const data = await readJsonFile<{ fixtures: Fixture[] }>('fixtures.json')
-  const index = data.fixtures.findIndex(f => f.id === id)
-  if (index === -1) return false
-  data.fixtures.splice(index, 1)
-  await writeJsonFile('fixtures.json', data)
-  return true
+  return deleteById('fixtures', id)
 }
 
 export async function batchCreateFixtures(fixtures: Fixture[]): Promise<{ success: number; failed: number }> {
-  const data = await readJsonFile<{ fixtures: Fixture[] }>('fixtures.json')
-  let success = 0
-  let failed = 0
-  
-  for (const fixture of fixtures) {
-    try {
-      data.fixtures.push(fixture)
-      success++
-    } catch {
-      failed++
-    }
-  }
-  
-  await writeJsonFile('fixtures.json', data)
-  return { success, failed }
+  await insertMany(
+    'fixtures',
+    fixtures as unknown as Record<string, unknown>[]
+  )
+  return { success: fixtures.length, failed: 0 }
 }
 
 // Fixtures with Teams populated
@@ -189,8 +327,8 @@ export async function getFixtureWithTeams(id: string): Promise<FixtureWithTeams 
 
 // Standings
 export async function getStandings(): Promise<Standing[]> {
-  const data = await readJsonFile<{ standings: Standing[] }>('standings.json')
-  return data.standings
+  const rows = await selectAll('standings')
+  return rows.map(mapStanding)
 }
 
 export async function getStandingsByLeague(league: string): Promise<Standing[]> {
@@ -206,12 +344,8 @@ export async function getStandingByTeam(teamId: string): Promise<Standing | unde
 }
 
 export async function updateStanding(id: string, updates: Partial<Standing>): Promise<Standing | undefined> {
-  const data = await readJsonFile<{ standings: Standing[] }>('standings.json')
-  const index = data.standings.findIndex(s => s.id === id)
-  if (index === -1) return undefined
-  data.standings[index] = { ...data.standings[index], ...updates }
-  await writeJsonFile('standings.json', data)
-  return data.standings[index]
+  const row = await updateOne('standings', id, updates as unknown as Record<string, unknown>)
+  return row ? mapStanding(row) : undefined
 }
 
 // Update standings when a result is entered
@@ -222,14 +356,12 @@ export async function updateStandingsForResult(
   awayScore: number,
   league: string
 ): Promise<void> {
-  const data = await readJsonFile<{ standings: Standing[] }>('standings.json')
-  
-  const homeStanding = data.standings.find(s => s.teamId === homeTeamId && s.league === league)
-  const awayStanding = data.standings.find(s => s.teamId === awayTeamId && s.league === league)
-  
+  const standings = await getStandings()
+  const homeStanding = standings.find(s => s.teamId === homeTeamId && s.league === league)
+  const awayStanding = standings.find(s => s.teamId === awayTeamId && s.league === league)
+
   if (!homeStanding || !awayStanding) return
   
-  // Update stats
   homeStanding.played++
   awayStanding.played++
   homeStanding.goalsFor += homeScore
@@ -239,7 +371,6 @@ export async function updateStandingsForResult(
   homeStanding.goalDifference = homeStanding.goalsFor - homeStanding.goalsAgainst
   awayStanding.goalDifference = awayStanding.goalsFor - awayStanding.goalsAgainst
   
-  // Determine result
   let homeForm: 'W' | 'D' | 'L'
   let awayForm: 'W' | 'D' | 'L'
   
@@ -264,12 +395,10 @@ export async function updateStandingsForResult(
     awayForm = 'D'
   }
   
-  // Update form (keep last 5)
   homeStanding.form = [homeForm, ...homeStanding.form.slice(0, 4)]
   awayStanding.form = [awayForm, ...awayStanding.form.slice(0, 4)]
   
-  // Recalculate positions for this league
-  const leagueStandings = data.standings
+  const leagueStandings = standings
     .filter(s => s.league === league)
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
@@ -278,11 +407,13 @@ export async function updateStandingsForResult(
     })
   
   leagueStandings.forEach((s, index) => {
-    const original = data.standings.find(st => st.id === s.id)
-    if (original) original.position = index + 1
+    s.position = index + 1
   })
-  
-  await writeJsonFile('standings.json', data)
+
+  await upsertMany(
+    'standings',
+    leagueStandings as unknown as Record<string, unknown>[]
+  )
 }
 
 // Standings with Teams populated

@@ -24,6 +24,12 @@ export interface Team {
 // Fixture Status
 export type FixtureStatus = 'scheduled' | 'live' | 'completed' | 'postponed'
 
+export interface GoalScorer {
+  teamId: string
+  playerName: string
+  minute?: number | null
+}
+
 // Fixture Types
 export interface Fixture {
   id: string
@@ -38,6 +44,7 @@ export interface Fixture {
   status: FixtureStatus
   homeScore: number | null
   awayScore: number | null
+  scorers: GoalScorer[]
   broadcastTime?: string
   createdAt: string
   updatedAt: string

@@ -10,14 +10,26 @@ import {
   getStandingsWithTeams, 
   getLeagues 
 } from '@/lib/data'
+import type { FixtureWithTeams, League, StandingWithTeam } from '@/lib/types'
 
 export default async function HomePage() {
-  const [allFixtures, fkfStandings, wnslStandings, leagues] = await Promise.all([
-    getFixturesWithTeams(),
-    getStandingsWithTeams('fkf-nyanza'),
-    getStandingsWithTeams('wnsl'),
-    getLeagues(),
-  ])
+  let allFixtures: FixtureWithTeams[] = []
+  let fkfStandings: StandingWithTeam[] = []
+  let wnslStandings: StandingWithTeam[] = []
+  let leagues: League[] = []
+  let databaseUnavailable = false
+
+  try {
+    ;[allFixtures, fkfStandings, wnslStandings, leagues] = await Promise.all([
+      getFixturesWithTeams(),
+      getStandingsWithTeams('fkf-nyanza'),
+      getStandingsWithTeams('wnsl'),
+      getLeagues(),
+    ])
+  } catch (error) {
+    console.error('Failed to load homepage data from database:', error)
+    databaseUnavailable = true
+  }
 
   // Get upcoming fixtures (next 6)
   const today = new Date().toISOString().split('T')[0]
@@ -66,6 +78,18 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {databaseUnavailable && (
+        <section className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <Card className="border-destructive/30">
+              <CardContent className="py-4 text-sm text-muted-foreground">
+                Unable to reach the database right now. Live fixtures, standings, and results will appear once the connection is restored.
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       {/* Upcoming Fixtures */}
       <section className="py-12 lg:py-16">
